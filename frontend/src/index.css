@@ -1,0 +1,149 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-family: 'Outfit', sans-serif;
+  color-scheme: dark;
+  
+  /* PayLens Elite Palette - Dynamic White Label */
+  --accent-color: #0ea5e9;
+  --accent-glow: rgba(14, 165, 233, 0.3);
+  
+  --carbon-deep: #09090b;
+  --carbon-mid: #18181b;
+  --carbon-light: #27272a;
+  
+  --cyan-precision: var(--accent-color);
+  --emerald-success: #10b981;
+  --rose-fraud: #f43f5e;
+  --amber-warning: #f59e0b;
+  
+  --glass-bg: rgba(0, 0, 0, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.08);
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--carbon-deep);
+  color: #fafafa;
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  width: 100%;
+}
+
+/* Custom Scrollbar Elite */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--carbon-deep);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--carbon-light);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+/* Elite Glassmorphism */
+.glass {
+  background: rgba(24, 24, 27, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.glass-header {
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.glass-sidebar {
+  background: rgba(12, 12, 14, 0.7);
+  backdrop-filter: blur(32px) saturate(200%);
+  border-right: 1px solid var(--glass-border);
+}
+
+.glass-extreme {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
+}
+
+.onboarding-backdrop {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Neon Glow Accents */
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.15);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+}
+
+.glow-card:hover {
+  border-color: rgba(14, 165, 233, 0.3);
+  box-shadow: 0 0 30px rgba(14, 165, 233, 0.05);
+}
+
+/* AI Radar Animation */
+@keyframes radar-pulse {
+  0% { transform: scale(0.5); opacity: 1; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+.radar-circle {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--cyan-precision);
+  animation: radar-pulse 3s infinite cubic-bezier(0.21, 0.61, 0.35, 1);
+}
+
+.radar-circle:nth-child(2) { animation-delay: 1s; }
+.radar-circle:nth-child(3) { animation-delay: 2s; }
+
+.input-elite {
+  @apply bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 placeholder:text-zinc-600;
+}
+
+/* Security Laser Scan Animation */
+@keyframes laser-scan {
+  0% { top: -5%; opacity: 0; }
+  10% { opacity: 0.8; }
+  90% { opacity: 0.8; }
+  100% { top: 105%; opacity: 0; }
+}
+
+.scan-line {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+  box-shadow: 0 0 15px var(--accent-color), 0 0 30px var(--accent-color);
+  z-index: 20;
+  pointer-events: none;
+  animation: laser-scan 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+

@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+supabase==2.2.0
+python-multipart
+pydantic
+google-cloud-vision
+python-dotenv
