@@ -1,6 +1,8 @@
 import re
 import os
 import io
+import json
+import tempfile
 from datetime import datetime, date
 from decimal import Decimal
 from typing import Optional, List, Dict, Any
@@ -20,11 +22,7 @@ class GoogleVisionOCR(OCRService):
     """
 
     def __init__(self):
-        # La variable de entorno GOOGLE_APPLICATION_CREDENTIALS debe estar configurada.
-        # Si existe el archivo de credenciales en core, lo configuramos por defecto.
-        creds_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "core", "google_creds.json")
-        if os.path.exists(creds_path) and not os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
-            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = creds_path
+        self._creds_path = self._ensure_google_creds()
         
         try:
             self.client = vision.ImageAnnotatorClient()
@@ -32,6 +30,38 @@ class GoogleVisionOCR(OCRService):
         except Exception as e:
             print(f"ERROR inicializando Google Vision: {str(e)}")
             self.client = None
+
+    def _ensure_google_creds(self) -> str:
+        existing = (os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "") or "").strip()
+        if existing:
+            return existing
+
+        raw_json = (os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON", "") or "").strip()
+        if not raw_json:
+            raw_json = (os.getenv("GOOGLE_CREDS_JSON", "") or "").strip()
+
+        if raw_json:
+            try:
+                obj = json.loads(raw_json)
+            except Exception:
+                obj = None
+
+            if isinstance(obj, dict):
+                path = os.path.join(tempfile.gettempdir(), "paylens_google_creds.json")
+                try:
+                    with open(path, "w", encoding="utf-8") as f:
+                        json.dump(obj, f)
+                    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = path
+                    return path
+                except Exception:
+                    return ""
+
+        creds_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "core", "google_creds.json")
+        if os.path.exists(creds_path):
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = creds_path
+            return creds_path
+
+        return ""
 
     def extract(self, image_bytes: bytes) -> OCRResult:
         if not image_bytes:
