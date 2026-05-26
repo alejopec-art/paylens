@@ -181,6 +181,10 @@ def health():
         "supabase_key_looks_service_role": (os.getenv("SUPABASE_SERVICE_ROLE_KEY", "") or "").strip().startswith("sb_secret_"),
         "supabase_host": supa_host,
         "supabase_project_ref": supa_ref,
+        "ocr_provider": (os.getenv("OCR_PROVIDER", "") or "").strip() or "auto",
+        "google_creds_set": bool((os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "") or "").strip() or (os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON", "") or "").strip() or (os.getenv("GOOGLE_CREDS_JSON", "") or "").strip()),
+        "imap_enabled": settings.imap_enabled,
+        "sms_gateway_token_set": bool((settings.sms_gateway_token or "").strip()),
     }
     try:
         sb = get_supabase()
