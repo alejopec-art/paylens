@@ -117,7 +117,17 @@ def _attempt_match(sb, ocr: OCRResult, rec_id: str | None, wa_from: str | None, 
     elif m.reason == "REVISION_MANUAL":
         text = f"⚠️ *REVISIÓN EN CURSO*\nNo pudimos validar tu pago automáticamente debido a una diferencia mínima en los datos.\nUn asesor revisará tu caso en breve.\nReferencia detectada: ***{ref_parcial}"
     else:
-        text = f"⚠️ *NOTIFICACIÓN PAYLENS*\nNo pudimos validar tu pago automáticamente.\nUn asesor revisará tu caso en breve.\nReferencia detectada: ***{ref_parcial}"
+        motivo = (m.reason or "").strip() or "sin detalle"
+        monto_txt = (str(ocr.amount) if ocr.amount is not None else "N/A")
+        ref_txt = (ocr.reference or "N/A")
+        text = (
+            "⚠️ *NOTIFICACIÓN PAYLENS*\n"
+            "No pudimos validar tu pago automáticamente.\n"
+            f"Motivo: {motivo}\n"
+            f"Monto detectado: {monto_txt}\n"
+            f"Referencia detectada: {ref_txt}\n"
+            "Un asesor revisará tu caso en breve."
+        )
     if wa_from:
         send_message(wa_from, text)
 
