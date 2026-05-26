@@ -50,13 +50,19 @@ def _get_existing_receipt_id(sb, message_id: str | None) -> str | None:
 def _parse_amount_from_text(text: str) -> Decimal | None:
     if not text:
         return None
-    s = str(text).replace("$", "").replace("'", "").strip()
-    candidates = re.findall(r"\d[\d.,]*", s)
-    if not candidates:
-        return None
-    candidates = sorted((c for c in candidates if any(ch.isdigit() for ch in c)), key=len, reverse=True)
-    for amount_str in candidates:
-        t = amount_str.replace(" ", "")
+
+    s0 = str(text)
+    ref = _parse_reference_from_text(s0)
+    if ref:
+        s0 = re.sub(r"(?i)\b(ref|referencia)\b\s*[:#-]?\s*" + re.escape(ref) + r"\b", " ", s0)
+        s0 = s0.replace(ref, " ")
+
+    s = s0.replace("'", "").strip()
+
+    def _to_decimal_amount(raw: str) -> Decimal | None:
+        t = (raw or "").replace(" ", "")
+        if not t:
+            return None
         if "," in t and "." in t:
             t = t.replace(".", "").replace(",", ".")
         elif "," in t:
@@ -72,7 +78,29 @@ def _parse_amount_from_text(text: str) -> Decimal | None:
         try:
             return Decimal(t)
         except Exception:
-            continue
+            return None
+
+    m = re.search(r"\$\s*([0-9][0-9.,]*)", s)
+    if m:
+        v = _to_decimal_amount(m.group(1))
+        if v is not None:
+            return v
+
+    m = re.search(r"(?i)\bmonto\b\s*[:\-]?\s*([0-9][0-9.,]*)", s)
+    if m:
+        v = _to_decimal_amount(m.group(1))
+        if v is not None:
+            return v
+
+    s = s.replace("$", "")
+    candidates = re.findall(r"\d[\d.,]*", s)
+    if not candidates:
+        return None
+    candidates = sorted((c for c in candidates if any(ch.isdigit() for ch in c)), key=len, reverse=True)
+    for amount_str in candidates:
+        v = _to_decimal_amount(amount_str)
+        if v is not None:
+            return v
     return None
 
 def _parse_reference_from_text(text: str) -> str | None:
