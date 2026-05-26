@@ -123,10 +123,24 @@ def _attempt_match(sb, ocr: OCRResult, rec_id: str | None, wa_from: str | None, 
 
 @router.get("/health")
 def health():
+    supa_url = (os.getenv("SUPABASE_URL", "") or "").strip()
+    supa_host = ""
+    supa_ref = ""
+    try:
+        from urllib.parse import urlparse
+        supa_host = (urlparse(supa_url).hostname or "") if supa_url else ""
+        m = re.search(r"^([a-z0-9]+)\.supabase\.co$", supa_host, re.IGNORECASE)
+        if m:
+            supa_ref = m.group(1)
+    except Exception:
+        supa_host = ""
+        supa_ref = ""
     diag = {
         "supabase_url_set": bool((os.getenv("SUPABASE_URL", "") or "").strip()),
         "supabase_key_set": bool((os.getenv("SUPABASE_SERVICE_ROLE_KEY", "") or "").strip()),
         "supabase_key_looks_service_role": (os.getenv("SUPABASE_SERVICE_ROLE_KEY", "") or "").strip().startswith("sb_secret_"),
+        "supabase_host": supa_host,
+        "supabase_project_ref": supa_ref,
     }
     try:
         sb = get_supabase()
