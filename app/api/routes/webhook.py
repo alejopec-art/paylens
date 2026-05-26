@@ -50,28 +50,30 @@ def _get_existing_receipt_id(sb, message_id: str | None) -> str | None:
 def _parse_amount_from_text(text: str) -> Decimal | None:
     if not text:
         return None
-    s = str(text).replace("$", "").replace(" ", "").replace("'", "").strip()
-    m = re.search(r"(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?|\d+(?:[.,]\d{2})?)", s)
-    if not m:
+    s = str(text).replace("$", "").replace("'", "").strip()
+    candidates = re.findall(r"\d[\d.,]*", s)
+    if not candidates:
         return None
-    amount_str = m.group(1)
-    if "," in amount_str:
-        if "." in amount_str:
-            amount_str = amount_str.replace(".", "").replace(",", ".")
-        else:
-            parts = amount_str.split(",")
+    candidates = sorted((c for c in candidates if any(ch.isdigit() for ch in c)), key=len, reverse=True)
+    for amount_str in candidates:
+        t = amount_str.replace(" ", "")
+        if "," in t and "." in t:
+            t = t.replace(".", "").replace(",", ".")
+        elif "," in t:
+            parts = t.split(",")
             if len(parts[-1]) == 3:
-                amount_str = amount_str.replace(",", "")
+                t = t.replace(",", "")
             else:
-                amount_str = amount_str.replace(",", ".")
-    elif "." in amount_str:
-        parts = amount_str.split(".")
-        if len(parts[-1]) == 3:
-            amount_str = amount_str.replace(".", "")
-    try:
-        return Decimal(amount_str)
-    except Exception:
-        return None
+                t = t.replace(",", ".")
+        elif "." in t:
+            parts = t.split(".")
+            if len(parts[-1]) == 3:
+                t = t.replace(".", "")
+        try:
+            return Decimal(t)
+        except Exception:
+            continue
+    return None
 
 def _parse_reference_from_text(text: str) -> str | None:
     if not text:
