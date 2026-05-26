@@ -131,7 +131,7 @@ class BankRelayService:
                 "reference": notification.reference,
                 "payment_date": notification.payment_date.isoformat(),
                 "raw_payload": {"text": notification.raw_text},
-                "matched": is_direct
+                "matched": False
             }
             
             try:

@@ -65,7 +65,7 @@ def insert_bank_notification_and_broadcast(
         "reference": notification.reference,
         "payment_date": dt.astimezone(timezone.utc).isoformat() if dt else _now_utc_iso(),
         "raw_payload": raw_payload or {},
-        "matched": True,
+        "matched": False,
     }
     try:
         sb.table("bank_notifications").insert(row).execute()

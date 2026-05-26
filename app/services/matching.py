@@ -42,8 +42,8 @@ def match_payment(sb, ocr: OCRResult, amount_tolerance: Decimal = Decimal("500.0
             return MatchResult(matched=False, reason="FRAUDE_DUPLICADO")
 
     # 2. Búsqueda de coincidencia exacta o cercana en bank_notifications
-    q = sb.table("bank_notifications").select("id,amount,payment_date,reference").eq("matched", False)
-    res = q.limit(100).execute()
+    q = sb.table("bank_notifications").select("id,amount,payment_date,reference,matched,matched_receipt_id")
+    res = q.order("payment_date", descending=True).limit(200).execute()
     rows = (res.data or []) if hasattr(res, "data") else []
 
     if not rows:
@@ -55,6 +55,10 @@ def match_payment(sb, ocr: OCRResult, amount_tolerance: Decimal = Decimal("500.0
     manual_review_needed = False
 
     for r in rows:
+        if r.get("matched_receipt_id"):
+            continue
+        if r.get("matched") is True and r.get("matched_receipt_id") is not None:
+            continue
         r_amount = _to_decimal(r.get("amount"))
         r_ref = (r.get("reference") or "").strip().upper()
         

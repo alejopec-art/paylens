@@ -18,6 +18,9 @@ def retry_on_failure(max_retries: int = 3, initial_delay: float = 1.0, backoff_f
                 try:
                     return func(*args, **kwargs)
                 except Exception as e:
+                    msg = str(e)
+                    if "Supabase REST 409" in msg:
+                        raise e
                     retries += 1
                     if retries >= max_retries:
                         print(f"SRE ALERT: Máximo de reintentos alcanzado para {func.__name__}. Error: {str(e)}")

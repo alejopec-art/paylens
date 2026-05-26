@@ -35,6 +35,18 @@ def _compact_webhook(msg: dict, value: dict) -> dict:
         out["text"] = (msg.get("text") or {}).get("body")
     return out
 
+def _get_existing_receipt_id(sb, message_id: str | None) -> str | None:
+    if not sb or not message_id:
+        return None
+    try:
+        res = sb.table("processed_receipts").select("id").eq("message_id", message_id).limit(1).execute()
+        rows = res.data if hasattr(res, "data") else []
+        if rows:
+            return rows[0].get("id")
+    except Exception:
+        return None
+    return None
+
 def _parse_amount_from_text(text: str) -> Decimal | None:
     if not text:
         return None
@@ -203,6 +215,12 @@ async def whatsapp_webhook(request: Request):
                             warnings.append(f"No se pudo descargar media: {str(e)}")
                     ocr = ocr_service.extract(img)
                     print(f"OCR RESULT: Cantidad=${ocr.amount}, Ref={ocr.reference}")
+                    if ocr.amount is None and not ocr.reference:
+                        if wa_from:
+                            send_message(
+                                wa_from,
+                                "⚠️ No pude leer el monto o la referencia en la foto.\n\nIntenta:\n- Enviar la foto más nítida (sin reflejos, acercada)\n- O escribe en un solo mensaje: MONTO + REFERENCIA\nEjemplo: 15000 ref 123456",
+                            )
 
                 receipt_row["ocr_amount"] = str(ocr.amount) if ocr.amount is not None else None
                 receipt_row["ocr_date"] = ocr.date.isoformat() if ocr.date else None
@@ -214,10 +232,13 @@ async def whatsapp_webhook(request: Request):
                         ins = sb.table("processed_receipts").insert(receipt_row).execute()
                         rec_id = (ins.data[0]["id"] if hasattr(ins, "data") and ins.data else None)
                     except Exception as e:
-                        print(f"Supabase insert error: {str(e)}")
-                        warnings.append(f"Fallo escribiendo processed_receipts: {str(e)[:120]}")
-                        sb_error = str(e)
-                        sb = None
+                        if "Supabase REST 409" in str(e) and "processed_receipts_message_id_uix" in str(e):
+                            rec_id = _get_existing_receipt_id(sb, msg_id)
+                        else:
+                            print(f"Supabase insert error: {str(e)}")
+                            warnings.append(f"Fallo escribiendo processed_receipts: {str(e)[:120]}")
+                            sb_error = str(e)
+                            sb = None
 
                 _attempt_match(sb, ocr, rec_id, wa_from, warnings)
             else:
@@ -231,6 +252,12 @@ async def whatsapp_webhook(request: Request):
             body = ((msg.get("text") or {}).get("body") or "")
             t_amount = _parse_amount_from_text(body)
             t_ref = _parse_reference_from_text(body)
+            if t_amount is None and not t_ref:
+                if wa_from:
+                    send_message(
+                        wa_from,
+                        "✅ PayLens está activo.\n\nPara verificar un pago, envía la *foto del comprobante* o escribe en un solo mensaje:\nMONTO + REFERENCIA\nEjemplo: 15000 ref 123456",
+                    )
             ocr = OCRResult(amount=t_amount, reference=t_ref, raw={"provider": "text"})
             receipt_row["ocr_amount"] = str(ocr.amount) if ocr.amount is not None else None
             receipt_row["ocr_reference"] = ocr.reference
@@ -240,10 +267,13 @@ async def whatsapp_webhook(request: Request):
                     ins = sb.table("processed_receipts").insert(receipt_row).execute()
                     rec_id = (ins.data[0]["id"] if hasattr(ins, "data") and ins.data else None)
                 except Exception as e:
-                    print(f"Supabase insert (text): {str(e)}")
-                    warnings.append(f"Fallo processed_receipts: {str(e)[:120]}")
-                    sb_error = str(e)
-                    sb = None
+                    if "Supabase REST 409" in str(e) and "processed_receipts_message_id_uix" in str(e):
+                        rec_id = _get_existing_receipt_id(sb, msg_id)
+                    else:
+                        print(f"Supabase insert (text): {str(e)}")
+                        warnings.append(f"Fallo processed_receipts: {str(e)[:120]}")
+                        sb_error = str(e)
+                        sb = None
             _attempt_match(sb, ocr, rec_id, wa_from, warnings)
         else:
             if sb:
